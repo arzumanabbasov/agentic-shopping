@@ -55,6 +55,8 @@ main {
   border-radius: 10px;
 }
 .topActions button:hover:not(:disabled) { background: #f2f2f2; color: #0d0d0d; }
+.topActions .shoppingListButton { position: relative; width: auto; min-width: 36px; padding: 0 9px; }
+.shoppingListButton span { display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; color: #fff; background: #0d0d0d; border-radius: 999px; font-size: 10px; font-weight: 700; }
 
 .thread {
   display: flex;
@@ -188,6 +190,20 @@ main {
 .msg.user { align-self: flex-end; padding: 10px 16px; color: #171717; background: #f4f4f4; border-radius: 18px; }
 .msg.status { color: #676767; }
 .messageImage { width: min(100%, 410px); max-height: 520px; object-fit: contain; background: #f4f4f4; border-radius: 18px; }
+.questionMessage { max-width: 100%; gap: 12px; }
+.questionMessage > p { font-size: 18px; font-weight: 600; letter-spacing: -.015em; }
+.questionMessage > small { color: #858585; font-size: 12px; }
+.quickReplies { display: flex; flex-wrap: wrap; gap: 7px; }
+.quickReplies button {
+  min-height: 36px;
+  padding: 0 13px;
+  color: #333;
+  background: transparent;
+  border: 1px solid #d8d8d8;
+  border-radius: 999px;
+  font-size: 13px;
+}
+.quickReplies button:hover:not(:disabled) { color: #fff; background: #0d0d0d; border-color: #0d0d0d; }
 
 .componentMsg {
   width: min(100%, 590px);
@@ -341,6 +357,79 @@ main {
 .sendButton { width: 34px; height: 34px; padding: 0; color: #fff; background: #0d0d0d; border: 0; border-radius: 50%; }
 .composer input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
+.listBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px;
+  background: rgba(0,0,0,.25);
+  backdrop-filter: blur(3px);
+}
+.shoppingList {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  width: min(100%, 430px);
+  height: 100%;
+  padding: 20px;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 22px 70px rgba(0,0,0,.18);
+}
+.shoppingList > header, .shoppingList > footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.shoppingList > header div { display: grid; gap: 2px; }
+.shoppingList > header span, .listIntro, .shoppingList > footer span { color: #737373; font-size: 13px; }
+.shoppingList > header h2 { font-size: 26px; font-weight: 600; letter-spacing: -.035em; }
+.shoppingList > header button, .listRemove {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: #555;
+  background: #f4f4f4;
+  border: 0;
+  border-radius: 50%;
+}
+.listIntro { padding: 10px 0 18px; line-height: 1.4; }
+.listItems { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.listItems::-webkit-scrollbar { display: none; }
+.listItem {
+  display: grid;
+  grid-template-columns: 28px 58px minmax(0, 1fr) 32px 32px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border: 1px solid #e8e8e8;
+  border-radius: 15px;
+}
+.listItem.checked { opacity: .55; background: #f7f7f7; }
+.listItem.checked strong { text-decoration: line-through; }
+.listCheck {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: transparent;
+  background: #fff;
+  border: 1.5px solid #c8c8c8;
+  border-radius: 50%;
+}
+.listItem.checked .listCheck { color: #fff; background: #10a37f; border-color: #10a37f; }
+.listItem img, .listFallback { width: 58px; height: 58px; object-fit: cover; background: #f3f3f3; border-radius: 10px; }
+.listFallback { display: grid; place-items: center; color: #777; }
+.listItem > div { display: grid; min-width: 0; gap: 3px; }
+.listItem strong, .listItem small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listItem strong { font-size: 13px; font-weight: 600; }
+.listItem small { color: #777; font-size: 11px; }
+.listItem > a { display: grid; place-items: center; width: 32px; height: 32px; color: #333; background: #f4f4f4; border-radius: 50%; }
+.listRemove { width: 32px; height: 32px; color: #8c3c3c; background: #fff3f3; }
+.shoppingList > footer { padding-top: 16px; border-top: 1px solid #ededed; }
+.shoppingList > footer button { min-height: 38px; padding: 0 15px; color: #fff; background: #0d0d0d; border: 0; border-radius: 999px; }
+
 @media (max-width: 640px) {
   .thread { padding: 22px 16px 36px; }
   .msg { max-width: 92%; }
@@ -352,4 +441,6 @@ main {
   .welcomeVisual { height: 230px; }
   .welcome h2 { font-size: 28px; }
   .starterGrid { grid-column: 1; grid-template-columns: 1fr; }
+  .listBackdrop { padding: 0; }
+  .shoppingList { width: 100%; border-radius: 0; }
 }

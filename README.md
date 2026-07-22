@@ -14,6 +14,7 @@ Naxora combines conversational styling, visual product discovery, and virtual tr
 - **Personal color profile:** an optional face photo detects skin, hair, eye, and lip colors for better recommendations.
 - **Buyable recommendations:** suggested pieces link to live shopping results.
 - **Visual undo and redo:** users can explore alternatives without losing earlier looks.
+- **Session shopping list:** every uploaded, recommended, and tried item stays in a checkable list with its price and purchase link when available.
 - **Plain-language interface:** technical API terminology stays out of the shopping experience.
 
 ## User flow

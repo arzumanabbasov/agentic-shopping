@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowUp, Check, ExternalLink, ImagePlus, Paperclip, Plus, Redo2, Sparkles, Undo2 } from 'lucide-react';
+import { ArrowUp, Check, ExternalLink, ImagePlus, Paperclip, Plus, Redo2, ShoppingBag, Sparkles, Trash2, Undo2, X } from 'lucide-react';
 import './styles.css';
 
 const API = import.meta.env.VITE_API_URL || (window.location.port === '5173' ? 'http://127.0.0.1:8787' : '');
@@ -55,6 +55,8 @@ function App() {
   const [fit, setFit] = useState(null);
   const [product, setProduct] = useState(null);
   const [intent, setIntent] = useState('office polish');
+  const [styleGoal, setStyleGoal] = useState('');
+  const [pendingQuestion, setPendingQuestion] = useState('');
   const [draft, setDraft] = useState('');
   const [messages, setMessages] = useState([
     { id: crypto.randomUUID(), role: 'agent', kind: 'welcome', text: 'What do you want to wear better?' }
@@ -63,6 +65,8 @@ function App() {
   const [products, setProducts] = useState([]);
   const [vto, setVto] = useState(null);
   const [colorProfile, setColorProfile] = useState(null);
+  const [triedItems, setTriedItems] = useState([]);
+  const [shoppingOpen, setShoppingOpen] = useState(false);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [past, setPast] = useState([]);
@@ -80,13 +84,15 @@ function App() {
   }
 
   function snapshot() {
-    return { fit, product, intent, draft, messages, style, products, vto, colorProfile, error };
+    return { fit, product, intent, styleGoal, pendingQuestion, draft, messages, style, products, vto, colorProfile, error };
   }
 
   function restore(state) {
     setFit(state.fit);
     setProduct(state.product);
     setIntent(state.intent);
+    setStyleGoal(state.styleGoal);
+    setPendingQuestion(state.pendingQuestion);
     setDraft(state.draft);
     setMessages(state.messages);
     setStyle(state.style);
@@ -99,6 +105,24 @@ function App() {
   function remember() {
     setPast((current) => [...current.slice(-9), snapshot()]);
     setFuture([]);
+  }
+
+  function rememberItem(item, status = 'saved') {
+    setTriedItems((current) => {
+      const match = current.find((entry) => (item.link && entry.link === item.link) || entry.id === item.id);
+      if (match) return current.map((entry) => match.id === entry.id ? { ...entry, ...item, status: entry.status === 'tried' ? 'tried' : status } : entry);
+      return [...current, { ...item, status, checked: false, addedAt: Date.now() }];
+    });
+  }
+
+  function toggleShoppingItem(id) {
+    if (busy) return;
+    setTriedItems((current) => current.map((item) => item.id === id ? { ...item, checked: !item.checked } : item));
+  }
+
+  function removeShoppingItem(id) {
+    if (busy) return;
+    setTriedItems((current) => current.filter((item) => item.id !== id));
   }
 
   function undo() {
@@ -128,7 +152,14 @@ function App() {
     setVto(null);
     setStyle(null);
     addMessage({ role: 'user', kind: 'image', text: 'This is what I’m wearing', image: URL.createObjectURL(file) });
-    addMessage({ role: 'agent', kind: 'actions', text: 'Got it. What should we do with this look?', actions: ['rate', 'product'] });
+    setPendingQuestion('occasion');
+    addMessage({ role: 'agent', kind: 'question', step: 'occasion', text: 'Where are you going in this outfit?', options: [
+      { label: 'Work', value: 'office polish' },
+      { label: 'A date', value: 'date night' },
+      { label: 'Everyday', value: 'minimal everyday' },
+      { label: 'An event', value: 'event ready' },
+      { label: 'Just exploring', value: 'open exploration' }
+    ] });
   }
 
   async function uploadProduct(file) {
@@ -148,9 +179,11 @@ function App() {
       const recognized = await readApiResponse(response);
       const identified = { ...nextProduct, ...recognized };
       setProduct(identified);
+      rememberItem(identified);
       addMessage({ role: 'agent', kind: 'actions', text: `I recognized this as ${recognized.label || recognized.category}. What should I do with it?`, actions: ['vto', 'rate', 'shop'] });
     } catch (err) {
       setProduct({ ...nextProduct, category: 'clothes', garmentCategory: 'auto' });
+      rememberItem({ ...nextProduct, category: 'clothes', garmentCategory: 'auto' });
       addMessage({ role: 'agent', kind: 'actions', text: 'I’ll treat this as clothing. What should I do with it?', actions: ['vto', 'rate', 'shop'] });
     } finally {
       operationRef.current = false;
@@ -161,15 +194,18 @@ function App() {
   function pinProduct(shopProduct) {
     if (busy) return;
     remember();
-    setProduct({
+    const pinned = {
       id: crypto.randomUUID(),
       source: 'shop',
       title: shopProduct.title,
       preview: shopProduct.image || '',
       link: shopProduct.link,
+      price: shopProduct.price,
       category: categoryToFeature(shopProduct.query),
       garmentCategory: 'auto'
-    });
+    };
+    setProduct(pinned);
+    rememberItem(pinned);
     setProducts([]);
     addMessage({ role: 'user', kind: 'product', text: 'Add this to my look', product: shopProduct });
     addMessage({ role: 'agent', kind: 'actions', text: 'Added. I’ll use your newest look from now on.', actions: ['vto', 'rate'] });
@@ -187,7 +223,7 @@ function App() {
     try {
       const body = new FormData();
       body.append('intent', nextIntent);
-      body.append('userNotes', `${note}${colorProfile ? `\nVerified personal colors: ${JSON.stringify(colorProfile)}` : ''}`);
+      body.append('userNotes', `${note}${styleGoal ? `\nOutfit goal: ${styleGoal}` : ''}${colorProfile ? `\nVerified personal colors: ${JSON.stringify(colorProfile)}` : ''}`);
       body.append('itemMeta', JSON.stringify(product ? [{ title: product.title, source: product.source }] : []));
       body.append('imageUrls', JSON.stringify(vtoImage ? [vtoImage] : []));
       if (fit && !vtoImage) body.append('person', fit);
@@ -291,7 +327,10 @@ function App() {
         if (payload.task_status === 'success' || payload.task_status === 'error') {
           operationRef.current = false;
           setBusy('');
-          if (image) addMessage({ role: 'agent', kind: 'image', text: 'Here’s your new look', image });
+          if (image) {
+            rememberItem(product, 'tried');
+            addMessage({ role: 'agent', kind: 'image', text: 'Here’s your new look', image });
+          }
           addMessage({ role: 'agent', kind: 'actions', text: image ? 'This is now the look I’ll use. Keep going?' : 'I couldn’t try that image. Add a clearer product photo and we’ll try again.', actions: image ? ['rate', 'shop', 'product'] : ['product'] });
           return;
         }
@@ -344,8 +383,35 @@ function App() {
     if (busy) return;
     const text = draft.trim();
     if (!text) return;
+    if (pendingQuestion) {
+      addMessage({ role: 'user', kind: 'text', text });
+      setDraft('');
+      answerQuestion(pendingQuestion, text, text, true);
+      return;
+    }
     addMessage({ role: 'user', kind: 'text', text });
     analyze(intent, text);
+  }
+
+  function answerQuestion(step, value, label, userMessageAlreadyAdded = false) {
+    if (busy) return;
+    if (!userMessageAlreadyAdded) addMessage({ role: 'user', kind: 'text', text: label });
+    if (step === 'occasion') {
+      setIntent(value);
+      setPendingQuestion('goal');
+      addMessage({ role: 'agent', kind: 'question', step: 'goal', text: 'What do you want this look to do for you?', options: [
+        { label: 'Look more polished', value: 'more polished and put together' },
+        { label: 'Feel comfortable', value: 'comfortable and easy to wear' },
+        { label: 'Stand out', value: 'bold, memorable, and confident' },
+        { label: 'Keep it simple', value: 'minimal, clean, and effortless' },
+        { label: 'Surprise me', value: 'take a creative risk that still suits me' }
+      ] });
+      return;
+    }
+    setStyleGoal(value);
+    setPendingQuestion('');
+    addMessage({ role: 'agent', kind: 'text', text: `Perfect. I’ll keep “${value}” in mind while we build the look.` });
+    addMessage({ role: 'agent', kind: 'actions', text: 'Want my opinion first, or do you already have something to add?', actions: ['rate', 'product'] });
   }
 
   function runAction(action) {
@@ -374,6 +440,7 @@ function App() {
             <h1>Naxora</h1>
           </div>
           <div className="topActions">
+            <button className="shoppingListButton" onClick={() => setShoppingOpen(true)} disabled={Boolean(busy) || !triedItems.length} aria-label={`Open shopping list with ${triedItems.length} items`} title="Shopping list"><ShoppingBag size={18} />{triedItems.length ? <span>{triedItems.length}</span> : null}</button>
             <button onClick={undo} disabled={!past.length || Boolean(busy)} aria-label="Go back one step" title="Go back one step"><Undo2 size={18} /></button>
             <button onClick={redo} disabled={!future.length || Boolean(busy)} aria-label="Go forward one step" title="Go forward one step"><Redo2 size={18} /></button>
           </div>
@@ -397,6 +464,8 @@ function App() {
               onPin={pinProduct}
               actionLabels={actionLabels}
               busy={busy}
+              onAnswer={answerQuestion}
+              activeQuestion={pendingQuestion}
             />
           ))}
         </section>
@@ -412,19 +481,43 @@ function App() {
             <button type="button" disabled={Boolean(busy)} onClick={() => colorInputRef.current?.click()}><Sparkles size={17} /> Learn my colors</button>
           </div>
           <div className="promptRow">
-            <input disabled={Boolean(busy)} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={busy ? 'One moment…' : 'Ask anything about your look'} />
+            <input disabled={Boolean(busy)} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={busy ? 'One moment…' : pendingQuestion === 'occasion' ? 'Tell me where you’re going' : pendingQuestion === 'goal' ? 'Tell me what you want from the look' : 'Ask anything about your look'} />
             <button className="sendButton" type="submit" disabled={!draft.trim() || Boolean(busy)} aria-label="Send"><ArrowUp size={19} /></button>
           </div>
           <input ref={fitInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => uploadFit(event.target.files?.[0])} />
           <input ref={productInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => uploadProduct(event.target.files?.[0])} />
           <input ref={colorInputRef} type="file" accept="image/jpeg" onChange={(event) => learnColors(event.target.files?.[0])} />
         </form>
+
+        {shoppingOpen ? (
+          <div className="listBackdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setShoppingOpen(false)}>
+            <aside className="shoppingList" role="dialog" aria-modal="true" aria-labelledby="shopping-list-title">
+              <header>
+                <div><span>Your saved session</span><h2 id="shopping-list-title">Shopping list</h2></div>
+                <button onClick={() => setShoppingOpen(false)} aria-label="Close shopping list"><X size={19} /></button>
+              </header>
+              <p className="listIntro">Everything you considered stays here until you remove it.</p>
+              <div className="listItems">
+                {triedItems.map((item) => (
+                  <article className={item.checked ? 'listItem checked' : 'listItem'} key={item.id}>
+                    <button className="listCheck" disabled={Boolean(busy)} onClick={() => toggleShoppingItem(item.id)} aria-label={item.checked ? `Uncheck ${item.title}` : `Check off ${item.title}`}><Check size={15} /></button>
+                    {item.preview ? <img src={item.preview} alt="" /> : <span className="listFallback"><ShoppingBag size={18} /></span>}
+                    <div><strong>{item.title}</strong><small>{item.price || (item.status === 'tried' ? 'Tried on' : 'Saved to try')}</small></div>
+                    {item.link ? <a href={item.link} target="_blank" rel="noreferrer" aria-label={`Buy ${item.title}`}><ExternalLink size={17} /></a> : <a href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(item.title)}`} target="_blank" rel="noreferrer" aria-label={`Find ${item.title} online`}><ExternalLink size={17} /></a>}
+                    <button className="listRemove" disabled={Boolean(busy)} onClick={() => removeShoppingItem(item.id)} aria-label={`Remove ${item.title}`}><Trash2 size={16} /></button>
+                  </article>
+                ))}
+              </div>
+              <footer><span>{triedItems.filter((item) => item.checked).length} of {triedItems.length} checked off</span><button onClick={() => setShoppingOpen(false)}>Keep styling</button></footer>
+            </aside>
+          </div>
+        ) : null}
       </section>
     </main>
   );
 }
 
-function Message({ message, onAction, onSearch, onPin, actionLabels, busy }) {
+function Message({ message, onAction, onSearch, onPin, actionLabels, busy, onAnswer, activeQuestion }) {
   if (message.kind === 'welcome') {
     return (
       <article className="welcome">
@@ -466,6 +559,20 @@ function Message({ message, onAction, onSearch, onPin, actionLabels, busy }) {
       <article className={`msg ${message.role}`}>
         <p>{message.text}</p>
         <img className="messageImage" src={message.image} alt="" />
+      </article>
+    );
+  }
+
+  if (message.kind === 'question') {
+    return (
+      <article className="msg agent questionMessage">
+        <p>{message.text}</p>
+        {activeQuestion === message.step ? <>
+          <div className="quickReplies">
+            {message.options.map((option) => <button disabled={Boolean(busy)} key={option.value} onClick={() => onAnswer(message.step, option.value, option.label)}>{option.label}</button>)}
+          </div>
+          <small>You can also type your own answer below.</small>
+        </> : null}
       </article>
     );
   }
