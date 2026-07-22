@@ -1,72 +1,129 @@
+<div align="center">
+
 # Naxora
 
-**An image-first AI shopping partner that sees your latest look, recommends what is missing, lets you try products on, and takes you to the real item.**
+### An image-first, agentic shopping assistant
 
-Naxora combines conversational styling, visual product discovery, and virtual try-on in one evolving shopping session. Upload what you are wearing, add a product or hairstyle reference, and keep refining the same visual state. Every recommendation and API call uses the newest generated look.
+Upload your outfit. Ask what is missing. Try real products on. Keep the pieces worth buying.
 
-> Built for the YouCam API hackathon with Perfect Corp APIs and Gemini multimodal analysis.
+[![CI](https://github.com/arzumanabbasov/agentic-shopping/actions/workflows/ci.yml/badge.svg)](https://github.com/arzumanabbasov/agentic-shopping/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
+[![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-43853d.svg)](https://nodejs.org/)
 
-## What makes it different
+</div>
 
-- **Agent-first workflow:** people describe what they want while the agent chooses the next tool.
-- **Latest-look memory:** each successful try-on becomes the source image for the next action.
-- **Non-destructive experiments:** clothing updates the canonical outfit, while shoes, hair, and jewelry remain previews so a generative engine cannot erase earlier progress.
-- **Automatic API routing:** uploaded images are recognized as clothing, shoes, hairstyles, earrings, necklaces, watches, bracelets, or rings.
-- **Personal color profile:** an optional face photo detects skin, hair, eye, and lip colors for better recommendations.
-- **Buyable recommendations:** suggested pieces link to live shopping results.
-- **Visual undo and redo:** users can explore alternatives without losing earlier looks.
-- **Session shopping list:** every uploaded, recommended, and tried item stays in a checkable list with its price and purchase link when available.
-- **Plain-language interface:** technical API terminology stays out of the shopping experience.
+## Why Naxora?
 
-## User flow
+Online shopping is fragmented. Inspiration lives on visual boards, products live across stores, and virtual try-on usually exists as an isolated retailer feature.
 
-1. Add a photo of what you are wearing.
-2. Ask Naxora to rate it or recommend the most useful next piece.
-3. Add an uploaded or recommended product.
-4. Let Naxora choose the appropriate virtual try-on engine.
-5. Continue from the generated image, compare alternatives, or open the product page to buy.
+Naxora turns those steps into one conversation. It sees the user's current outfit, understands the occasion and goal, recommends a concrete missing piece, finds buyable products, chooses the appropriate Perfect Corp try-on engine, and remembers every item considered along the way.
+
+The result feels like **AI virtual try-on + visual discovery + live shopping**, operated by an agent rather than a dashboard.
+
+## Core experience
+
+1. **Show your current outfit.** Upload a full-body image.
+2. **Set the context.** Tell Naxora where you are going and what the look should achieve.
+3. **Get visual advice.** Gemini analyzes the actual image and identifies the most useful next piece.
+4. **Explore real products.** Search best-match, lower-price, or premium options.
+5. **Try an item.** Naxora recognizes the product category and selects the correct VTO workflow.
+6. **Keep iterating.** Clothing updates the saved outfit; shoes, hair, and jewelry remain safe previews.
+7. **Leave with a list.** Every uploaded, recommended, and tried item stays in a checkable shopping list.
+
+## Highlights
+
+- **Agent-first interaction** — users express intent while Naxora chooses tools and next actions.
+- **Multimodal styling** — analysis uses the latest outfit image, not a generated text description.
+- **Canonical-look memory** — compatible clothing results build on the latest saved outfit.
+- **Non-destructive previews** — generative shoe, hair, and jewelry results cannot silently erase previous progress.
+- **Automatic product routing** — recognizes clothing, shoes, hairstyles, earrings, necklaces, watches, bracelets, rings, and unsupported accessories.
+- **Personal color profile** — optionally detects skin, hair, eye, and lip colors for future recommendations.
+- **Live product discovery** — returns purchasable products with price, image, source, and link.
+- **Session shopping list** — tracks considered products, try-on status, links, and completed purchases.
+- **Visual undo and redo** — moves backward and forward through outfit states.
+- **Accessible language** — the interface says “Try it on me,” not “execute VTO task.”
+
+## API capability map
+
+| User adds | Naxora behavior | Perfect Corp capability |
+| --- | --- | --- |
+| Shirt, trousers, dress, jacket | Updates the canonical outfit | AI Clothes V3 |
+| Shoes | Creates a non-destructive preview | AI Shoes VTO |
+| Hairstyle reference | Creates a non-destructive preview | Hair Transfer V2.1 |
+| Earrings, necklace, watch, bracelet, ring | Routes to the matching preview engine | 2D Jewelry VTO |
+| Clear face photo | Builds a reusable color profile | Skin Tone Analysis |
+| Belt, bag, hat, scarf | Rates compatibility and saves the item without offering unsupported VTO | Visual analysis |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    U["User images and questions"] --> UI["React chat interface"]
+    UI --> API["Express API layer"]
+    API --> G["Gemini multimodal analysis"]
+    API --> Y["Perfect Corp YouCam APIs"]
+    API --> S["Shopping search"]
+    G --> A["Advice and product category"]
+    Y --> V["Try-on result or preview"]
+    S --> P["Buyable product cards"]
+    A --> UI
+    V --> UI
+    P --> UI
+    UI --> M["Look history and shopping list"]
+```
+
+The frontend never receives provider credentials. It communicates only with the Naxora server, which validates uploads, routes AI tasks, polls results, and normalizes provider responses.
 
 ## Technology
 
-- React 19 and Vite
-- Express 5
+- React 19 and Vite 7
+- Express 5 and Node.js 20+
 - Gemini multimodal image analysis
-- Perfect Corp YouCam AI Clothes, Shoes, Hair Transfer, jewelry VTO, and Skin Tone Analysis APIs
-- Google Shopping results through SerpAPI, with store-search fallbacks in demo mode
+- Perfect Corp YouCam AI APIs
+- SerpAPI Google Shopping integration with demo-mode fallbacks
+- Vercel static hosting and Node.js Functions
 
-## Quick start
+## Run locally
 
-Requirements: Node.js 20 or newer and npm.
+### Requirements
+
+- Node.js 20 or newer
+- npm
+- At least one provider key for live AI behavior
+
+### Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/naxora.git
-cd naxora
+git clone https://github.com/arzumanabbasov/agentic-shopping.git
+cd agentic-shopping
 cp .env.example .env
 npm install
 npm start
 ```
 
-Open `http://127.0.0.1:5173` for development. To run the production build locally:
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173).
+
+For a production-style local run:
 
 ```bash
 npm run build
 npm run server
 ```
 
-Then open `http://127.0.0.1:8787`.
+Then open [http://127.0.0.1:8787](http://127.0.0.1:8787).
 
-Windows PowerShell users can replace `npm` with `npm.cmd` and copy the environment file with `Copy-Item .env.example .env`.
+<details>
+<summary>Windows PowerShell commands</summary>
 
-## Deploying to Vercel
+```powershell
+Copy-Item .env.example .env
+npm.cmd install
+npm.cmd start
+```
 
-1. Import the GitHub repository into Vercel.
-2. Keep the detected Vite build command (`npm run build`) and `dist` output directory.
-3. Add `YOUCAM_API_KEY`, `GEMINI_API_KEY`, and optionally `SERPAPI_API_KEY` in Project Settings → Environment Variables.
-4. Deploy. Requests under `/api/*` are routed to the Express Vercel Function; all other routes use the Vite app.
+</details>
 
-Vercel Functions limit request and response bodies to 4.5 MB, so Naxora restricts uploaded images to 4 MB. Compress large phone photos before uploading. Do not add secrets to `vercel.json` or expose them as `VITE_*` variables.
-
-## Configuration
+## Environment variables
 
 ```dotenv
 YOUCAM_API_KEY=your_youcam_api_key
@@ -75,37 +132,84 @@ SERPAPI_API_KEY=optional_google_shopping_serpapi_key
 PORT=8787
 ```
 
-All credentials remain on the Express server. Never prefix secrets with `VITE_`, commit `.env`, or place provider keys in frontend code.
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `YOUCAM_API_KEY` | For live try-on and color analysis | Starts and polls Perfect Corp AI tasks |
+| `GEMINI_API_KEY` | For live visual styling | Analyzes outfits and recognizes product categories |
+| `SERPAPI_API_KEY` | Optional | Returns live Google Shopping product cards |
+| `PORT` | Optional | Local Express port; defaults to `8787` |
 
-- Without Gemini, Naxora returns demo styling recommendations and uses filename-based product classification.
-- Without SerpAPI, shopping cards link to Google and store searches.
-- Perfect Corp features require an enabled API key and sufficient units for each selected engine.
+Never prefix credentials with `VITE_`, place them in frontend code, or commit `.env`.
 
-## API overview
+### Demo behavior
 
-The browser communicates only with the local Naxora server:
+- Without Gemini, Naxora returns sample styling guidance and uses filename-based product classification.
+- Without SerpAPI, product cards link to Google Shopping and retailer searches.
+- Without an enabled Perfect Corp key and sufficient units, try-on endpoints return a configuration/provider error.
 
-- `POST /api/style/classify-product`
-- `POST /api/style/analyze-images`
-- `GET /api/shop/search`
-- `POST /api/youcam/upload`
-- `POST /api/youcam/vto`
-- `GET /api/youcam/vto/:taskId`
-- `POST /api/youcam/colors`
-- `GET /api/youcam/colors/:taskId`
+## Deploy to Vercel
 
-The server validates image types and sizes, rate-limits API traffic, blocks private-network image fetching, and keeps provider credentials out of browser responses.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Farzumanabbasov%2Fagentic-shopping)
 
-## Privacy and production readiness
+1. Import this repository into Vercel.
+2. Keep the build command as `npm run build` and output directory as `dist`.
+3. Add server-side environment variables under **Project Settings → Environment Variables**.
+4. Deploy.
 
-Naxora currently processes uploads in memory and does not intentionally save them to disk. Submitted images are still sent to configured AI providers. Before a public production launch, add user authentication, distributed rate limiting, explicit consent, data-retention controls, observability, and provider-specific privacy disclosures.
+The committed [`vercel.json`](vercel.json) routes `/api/*` to the Express function and serves the remaining paths from the Vite application.
 
-See [SECURITY.md](SECURITY.md) for reporting and deployment guidance.
+Vercel Functions limit request and response bodies to 4.5 MB, so Naxora caps uploads at 4 MB. Compress large phone photos before uploading.
+
+## Local API routes
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/style/classify-product` | Recognize the uploaded product and select a capability |
+| `POST` | `/api/style/analyze-images` | Analyze the latest visual look and item history |
+| `GET` | `/api/shop/search?q=...` | Find buyable product matches |
+| `POST` | `/api/youcam/upload` | Create and complete a provider upload |
+| `POST` | `/api/youcam/vto` | Start a routed virtual try-on task |
+| `GET` | `/api/youcam/vto/:taskId` | Poll a try-on task |
+| `POST` | `/api/youcam/colors` | Start personal color analysis |
+| `GET` | `/api/youcam/colors/:taskId` | Poll personal color analysis |
+
+## Security and privacy
+
+Naxora currently:
+
+- processes uploaded files in memory rather than intentionally persisting them;
+- restricts image formats, file counts, and upload sizes;
+- rate-limits API traffic;
+- blocks private-network and non-HTTPS remote image fetching;
+- keeps provider credentials on the server;
+- sanitizes production error responses; and
+- applies browser security and permissions headers.
+
+Uploaded images are still transmitted to configured AI providers. Before handling real customers, add authentication, distributed rate limiting, explicit consent, a documented retention/deletion policy, observability, and provider-specific privacy disclosures.
+
+Report vulnerabilities privately according to [SECURITY.md](SECURITY.md).
+
+## Current limitations
+
+- Try-on output quality depends on source framing, lighting, product imagery, API availability, and account entitlements.
+- Cross-engine previews may alter pose, background, or unrelated styling; Naxora therefore does not automatically promote them to the canonical outfit.
+- Unsupported accessories can be analyzed and saved but cannot be virtually applied.
+- Session history and the shopping list currently live in browser memory and reset after a page reload.
+- This is a hackathon prototype, not a finished commerce or identity system.
+
+## Roadmap
+
+- Guided camera capture and image-quality feedback
+- Persistent, privacy-aware sessions
+- Side-by-side look comparison
+- Size, budget, retailer, and sustainability preferences
+- Direct-to-provider uploads for larger production images
+- Automated visual-preservation checks between VTO engines
 
 ## Contributing
 
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and follow the [Code of Conduct](CODE_OF_CONDUCT.md) before opening a pull request.
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and follow the [Code of Conduct](CODE_OF_CONDUCT.md). For substantial changes, open an issue first so the interaction and privacy implications can be discussed.
 
 ## License
 
-Naxora is available under the [MIT License](LICENSE).
+Naxora is released under the [MIT License](LICENSE).
