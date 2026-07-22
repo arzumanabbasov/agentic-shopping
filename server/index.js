@@ -258,12 +258,12 @@ app.post('/api/style/classify-product', upload.single('image'), async (req, res,
     const geminiKey = process.env.GEMINI_API_KEY;
     if (!geminiKey) {
       const name = req.file.originalname.toLowerCase();
-      const category = name.includes('shoe') ? 'shoes' : name.includes('hair') ? 'hairstyle' : name.includes('earring') ? 'earrings' : name.includes('necklace') ? 'necklace' : name.includes('watch') ? 'watch' : name.includes('bracelet') ? 'bracelet' : name.includes('ring') ? 'ring' : 'clothes';
+      const category = name.includes('shoe') ? 'shoes' : name.includes('hair') ? 'hairstyle' : name.includes('earring') ? 'earrings' : name.includes('necklace') ? 'necklace' : name.includes('watch') ? 'watch' : name.includes('bracelet') ? 'bracelet' : name.includes('ring') ? 'ring' : /belt|bag|hat|scarf/.test(name) ? 'advice' : 'clothes';
       return res.json({ category, garmentCategory: 'auto', label: category === 'clothes' ? 'clothing' : category, confidence: 0.6, demo: true });
     }
     const prompt = `Look only at this product/reference image. Return strict JSON:
-{"category":"clothes|shoes|hairstyle|earrings|necklace|watch|bracelet|ring","garmentCategory":"upper_body|lower_body|full_body|auto","shoeGender":"male|female","label":"short everyday product name","confidence":0.0}
-Use hairstyle only when the image is primarily a person's hairstyle intended as a hair reference. Use clothes for all garments, bags, belts, and unknown fashion items. Confidence is 0 to 1.`;
+{"category":"clothes|shoes|hairstyle|earrings|necklace|watch|bracelet|ring|advice","garmentCategory":"upper_body|lower_body|full_body|auto","shoeGender":"male|female","label":"short everyday product name","confidence":0.0}
+Use hairstyle only when the image is primarily a person's hairstyle intended as a hair reference. Use advice for belts, bags, hats, scarves, and products without a supported try-on engine. Use clothes only for wearable upper-body, lower-body, or full-body garments. Confidence is 0 to 1.`;
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -273,7 +273,7 @@ Use hairstyle only when the image is primarily a person's hairstyle intended as 
     if (!response.ok) throw new Error(payload?.error?.message || 'Could not recognize that product');
     const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
     const result = parseJsonObject(text);
-    result.category = getFeature(result.category);
+    result.category = [...Object.keys(featureConfig), 'advice'].includes(result.category) ? result.category : 'advice';
     res.json(result);
   } catch (error) { next(error); }
 });
@@ -362,7 +362,7 @@ app.post('/api/style/analyze-images', upload.any(), async (req, res, next) => {
     const urlParts = await Promise.all(imageUrls.map(imageUrlPart));
 
     const prompt = `You are the visual fashion engine for Naxora.
-Analyze the actual image(s), not just text. The first image is the latest current look, which may already include previous VTO changes. Treat that latest look as the source of truth. Other images are products the user is considering. Judge the current evolving outfit, identify what works, what clashes, and what one or two product categories would complete it.
+Analyze the actual image(s), not just text. The first image is the latest current look or a clearly labeled experiment preview. Other images are products the user is considering. Judge the visible outfit, identify what works, what clashes, and what one or two product categories would complete it. Use the complete item history below as memory: do not recommend a category already tried or saved unless you explicitly recommend replacing it with a better version.
 
 Return strict JSON:
 {

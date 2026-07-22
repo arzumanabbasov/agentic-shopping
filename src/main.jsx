@@ -22,6 +22,7 @@ function categoryToFeature(value = '') {
   if (text.includes('watch')) return 'watch';
   if (text.includes('bracelet') || text.includes('bangle')) return 'bracelet';
   if (text.includes('ring')) return 'ring';
+  if (text.includes('belt') || text.includes('bag') || text.includes('hat') || text.includes('scarf')) return 'advice';
   return 'clothes';
 }
 
@@ -64,6 +65,8 @@ function App() {
   const [style, setStyle] = useState(null);
   const [products, setProducts] = useState([]);
   const [vto, setVto] = useState(null);
+  const [canonicalImage, setCanonicalImage] = useState('');
+  const [previewResult, setPreviewResult] = useState(null);
   const [colorProfile, setColorProfile] = useState(null);
   const [triedItems, setTriedItems] = useState([]);
   const [shoppingOpen, setShoppingOpen] = useState(false);
@@ -73,8 +76,8 @@ function App() {
   const [future, setFuture] = useState([]);
 
   const fitPreview = useMemo(() => (fit ? URL.createObjectURL(fit) : ''), [fit]);
-  const vtoImage = vto?.results?.url || vto?.results?.[0]?.url || vto?.result_url || vto?.image_url;
-  const currentLook = vtoImage || fitPreview;
+  const currentLook = previewResult?.image || canonicalImage || fitPreview;
+  const canonicalLook = canonicalImage || fitPreview;
 
   function addMessage(message) {
     setMessages((current) => [
@@ -84,7 +87,7 @@ function App() {
   }
 
   function snapshot() {
-    return { fit, product, intent, styleGoal, pendingQuestion, draft, messages, style, products, vto, colorProfile, error };
+    return { fit, product, intent, styleGoal, pendingQuestion, draft, messages, style, products, vto, canonicalImage, previewResult, colorProfile, error };
   }
 
   function restore(state) {
@@ -98,6 +101,8 @@ function App() {
     setStyle(state.style);
     setProducts(state.products);
     setVto(state.vto);
+    setCanonicalImage(state.canonicalImage);
+    setPreviewResult(state.previewResult);
     setColorProfile(state.colorProfile);
     setError(state.error);
   }
@@ -150,6 +155,8 @@ function App() {
     remember();
     setFit(file);
     setVto(null);
+    setCanonicalImage('');
+    setPreviewResult(null);
     setStyle(null);
     addMessage({ role: 'user', kind: 'image', text: 'This is what I’m wearing', image: URL.createObjectURL(file) });
     setPendingQuestion('occasion');
@@ -167,7 +174,6 @@ function App() {
     const nextProduct = itemFromFile(file);
     remember();
     setProduct(nextProduct);
-    setVto(null);
     addMessage({ role: 'user', kind: 'image', text: 'Would this work with it?', image: nextProduct.preview });
     operationRef.current = true;
     setBusy('recognizing');
@@ -180,7 +186,7 @@ function App() {
       const identified = { ...nextProduct, ...recognized };
       setProduct(identified);
       rememberItem(identified);
-      addMessage({ role: 'agent', kind: 'actions', text: `I recognized this as ${recognized.label || recognized.category}. What should I do with it?`, actions: ['vto', 'rate', 'shop'] });
+      addMessage({ role: 'agent', kind: 'actions', text: `I recognized this as ${recognized.label || recognized.category}. What should I do with it?`, actions: recognized.category === 'advice' ? ['rate', 'shop'] : ['vto', 'rate', 'shop'] });
     } catch (err) {
       setProduct({ ...nextProduct, category: 'clothes', garmentCategory: 'auto' });
       rememberItem({ ...nextProduct, category: 'clothes', garmentCategory: 'auto' });
@@ -208,7 +214,7 @@ function App() {
     rememberItem(pinned);
     setProducts([]);
     addMessage({ role: 'user', kind: 'product', text: 'Add this to my look', product: shopProduct });
-    addMessage({ role: 'agent', kind: 'actions', text: 'Added. I’ll use your newest look from now on.', actions: ['vto', 'rate'] });
+    addMessage({ role: 'agent', kind: 'actions', text: pinned.category === 'advice' ? 'Saved. I can tell you whether it matches, but this type of item can’t be virtually tried on yet.' : 'Saved to your session. Try it on when you’re ready.', actions: pinned.category === 'advice' ? ['rate'] : ['vto', 'rate'] });
   }
 
   async function analyze(nextIntent = intent, note = draft) {
@@ -223,10 +229,10 @@ function App() {
     try {
       const body = new FormData();
       body.append('intent', nextIntent);
-      body.append('userNotes', `${note}${styleGoal ? `\nOutfit goal: ${styleGoal}` : ''}${colorProfile ? `\nVerified personal colors: ${JSON.stringify(colorProfile)}` : ''}`);
-      body.append('itemMeta', JSON.stringify(product ? [{ title: product.title, source: product.source }] : []));
-      body.append('imageUrls', JSON.stringify(vtoImage ? [vtoImage] : []));
-      if (fit && !vtoImage) body.append('person', fit);
+      body.append('userNotes', `${note}${styleGoal ? `\nOutfit goal: ${styleGoal}` : ''}${previewResult ? '\nThe primary image is a non-destructive preview. Judge whether the previewed item matches, but do not reward changes to the person, pose, background, or unrelated garments.' : ''}${colorProfile ? `\nVerified personal colors: ${JSON.stringify(colorProfile)}` : ''}`);
+      body.append('itemMeta', JSON.stringify(triedItems.map((item) => ({ title: item.title, source: item.source, category: item.category, status: item.status, checked: item.checked }))));
+      body.append('imageUrls', JSON.stringify(currentLook && currentLook !== fitPreview ? [currentLook] : []));
+      if (fit && (!currentLook || currentLook === fitPreview)) body.append('person', fit);
       if (product?.file) body.append('itemImages', product.file);
       const response = await fetch(`${API}/api/style/analyze-images`, { method: 'POST', body });
       const result = await readApiResponse(response);
@@ -284,12 +290,16 @@ function App() {
       setError('For a hairstyle reference, use a JPG photo with the hair clearly visible.');
       return;
     }
+    if (product.category === 'advice') {
+      setError('This item can’t be tried on yet. I can still judge whether it matches and keep it in your shopping list.');
+      return;
+    }
     operationRef.current = true;
     setBusy('trying on');
     setError('');
     try {
       const feature = product.category || 'clothes';
-      const srcFileId = fit && !vtoImage ? await uploadToYouCam(fit, feature) : undefined;
+      const srcFileId = fit && !canonicalImage ? await uploadToYouCam(fit, feature) : undefined;
       const refFileId = product?.file ? await uploadToYouCam(product.file, feature) : undefined;
       const response = await fetch(`${API}/api/youcam/vto`, {
         method: 'POST',
@@ -297,7 +307,7 @@ function App() {
         body: JSON.stringify({
           srcFileId,
           refFileId,
-          srcFileUrl: srcFileId ? undefined : (vtoImage || 'https://plugins-media.makeupar.com/strapi/assets/clothes_01_10be1e1a9b.png'),
+          srcFileUrl: srcFileId ? undefined : (canonicalLook || 'https://plugins-media.makeupar.com/strapi/assets/clothes_01_10be1e1a9b.png'),
           refFileUrl: refFileId ? undefined : product.preview,
           garmentCategory: product.garmentCategory || 'auto',
           feature,
@@ -306,8 +316,8 @@ function App() {
       });
       const payload = await readApiResponse(response);
       remember();
-      setVto({ taskId: payload.taskId, feature: payload.feature || feature, task_status: 'processing' });
-      addMessage({ role: 'agent', kind: 'status', text: 'Putting it on your latest look…' });
+      setVto((current) => ({ ...current, taskId: payload.taskId, feature: payload.feature || feature, task_status: 'processing' }));
+      addMessage({ role: 'agent', kind: 'status', text: feature === 'clothes' ? 'Adding it to your saved outfit…' : 'Creating a preview without changing your saved outfit…' });
       pollVto(payload.taskId, payload.feature || feature);
     } catch (err) {
       setError(err.message);
@@ -322,16 +332,23 @@ function App() {
       try {
         const response = await fetch(`${API}/api/youcam/vto/${encodeURIComponent(taskId)}?feature=${encodeURIComponent(feature)}`);
         const payload = await readApiResponse(response);
-        setVto({ taskId, feature, ...payload });
+        setVto((current) => ({ ...current, taskId, feature, ...payload }));
         const image = payload?.results?.url || payload?.results?.[0]?.url || payload?.result_url || payload?.image_url;
         if (payload.task_status === 'success' || payload.task_status === 'error') {
           operationRef.current = false;
           setBusy('');
           if (image) {
             rememberItem(product, 'tried');
-            addMessage({ role: 'agent', kind: 'image', text: 'Here’s your new look', image });
+            if (feature === 'clothes') {
+              setCanonicalImage(image);
+              setPreviewResult(null);
+              addMessage({ role: 'agent', kind: 'image', text: 'Here’s your updated outfit', image });
+            } else {
+              setPreviewResult({ image, feature, productId: product.id });
+              addMessage({ role: 'agent', kind: 'image', text: `Here’s the ${feature} preview`, image });
+            }
           }
-          addMessage({ role: 'agent', kind: 'actions', text: image ? 'This is now the look I’ll use. Keep going?' : 'I couldn’t try that image. Add a clearer product photo and we’ll try again.', actions: image ? ['rate', 'shop', 'product'] : ['product'] });
+          addMessage({ role: 'agent', kind: 'actions', text: image ? (feature === 'clothes' ? 'This is now your saved outfit. Keep going?' : 'I kept your saved outfit unchanged. I can judge this preview or help with the next piece.') : 'I couldn’t try that image. Add a clearer product photo and we’ll try again.', actions: image ? ['rate', 'shop', 'product'] : ['product'] });
           return;
         }
       } catch (err) {
@@ -450,7 +467,7 @@ function App() {
           {currentLook ? (
             <div className="currentLook">
               <img src={currentLook} alt="Latest look" />
-              <div><strong>Your current look</strong><span>Every answer uses this photo</span></div>
+              <div><strong>{previewResult ? 'Previewing an idea' : 'Your current look'}</strong><span>{previewResult ? 'Your saved outfit is unchanged' : 'Every answer uses this photo'}</span></div>
               <Check size={18} />
             </div>
           ) : null}

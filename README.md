@@ -10,6 +10,7 @@ Naxora combines conversational styling, visual product discovery, and virtual tr
 
 - **Agent-first workflow:** people describe what they want while the agent chooses the next tool.
 - **Latest-look memory:** each successful try-on becomes the source image for the next action.
+- **Non-destructive experiments:** clothing updates the canonical outfit, while shoes, hair, and jewelry remain previews so a generative engine cannot erase earlier progress.
 - **Automatic API routing:** uploaded images are recognized as clothing, shoes, hairstyles, earrings, necklaces, watches, bracelets, or rings.
 - **Personal color profile:** an optional face photo detects skin, hair, eye, and lip colors for better recommendations.
 - **Buyable recommendations:** suggested pieces link to live shopping results.
