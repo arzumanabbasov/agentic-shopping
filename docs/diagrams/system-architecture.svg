@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#09090b"/><stop offset="1" stop-color="#18181b"/></linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6d5dfc"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-opacity=".28"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0l10 5-10 5z" fill="#71717a"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1440" cy="90" r="280" fill="#7c3aed" opacity=".08"/><circle cx="130" cy="820" r="300" fill="#10b981" opacity=".06"/>
+  <text x="90" y="92" fill="#a78bfa" font-family="Inter,Segoe UI,sans-serif" font-size="22" font-weight="600" letter-spacing="3">NAXORA</text>
+  <text x="90" y="145" fill="#fafafa" font-family="Inter,Segoe UI,sans-serif" font-size="44" font-weight="700">Agentic Shopping Architecture</text>
+  <text x="90" y="182" fill="#a1a1aa" font-family="Inter,Segoe UI,sans-serif" font-size="20">One conversation orchestrates visual understanding, try-on, discovery, and memory.</text>
+
+  <path d="M330 438H475" stroke="#71717a" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M745 438H900" stroke="#71717a" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M1160 330H1265" stroke="#71717a" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M1160 438H1265" stroke="#71717a" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M1160 546H1265" stroke="#71717a" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M1030 640V725H655V615" fill="none" stroke="#52525b" stroke-width="3" stroke-dasharray="8 8" marker-end="url(#arrow)"/>
+
+  <g filter="url(#shadow)"><rect x="90" y="330" width="240" height="215" rx="28" fill="#18181b" stroke="#3f3f46"/>
+    <circle cx="210" cy="385" r="28" fill="#27272a"/><path d="M197 389c8-17 20-17 27 0M190 418c12-16 29-16 41 0" fill="none" stroke="#fafafa" stroke-width="4" stroke-linecap="round"/>
+    <text x="210" y="460" text-anchor="middle" fill="#fafafa" font-family="Inter,Segoe UI,sans-serif" font-size="26" font-weight="700">Shopper</text>
+    <text x="210" y="495" text-anchor="middle" fill="#a1a1aa" font-family="Inter,Segoe UI,sans-serif" font-size="17">Fit photos · goals</text><text x="210" y="520" text-anchor="middle" fill="#a1a1aa" font-family="Inter,Segoe UI,sans-serif" font-size="17">products · decisions</text>
+  </g>
+
+  <g filter="url(#shadow)"><rect x="475" y="290" width="270" height="295" rx="32" fill="url(#hero)"/>
+    <circle cx="610" cy="355" r="34" fill="#ffffff" opacity=".18"/><path d="M610 333l5 16 16 5-16 5-5 16-5-16-16-5 16-5z" fill="#fff"/>
+    <text x="610" y="435" text-anchor="middle" fill="#fff" font-family="Inter,Segoe UI,sans-serif" font-size="30" font-weight="700">React Agent UI</text>
+    <text x="610" y="474" text-anchor="middle" fill="#ede9fe" font-family="Inter,Segoe UI,sans-serif" font-size="17">Image-first conversation</text>
+    <text x="610" y="501" text-anchor="middle" fill="#ede9fe" font-family="Inter,Segoe UI,sans-serif" font-size="17">Action locking · undo/redo</text>
+    <text x="610" y="528" text-anchor="middle" fill="#ede9fe" font-family="Inter,Segoe UI,sans-serif" font-size="17">Shopping list</text>
+  </g>
+
+  <g filter="url(#shadow)"><rect x="900" y="260" width="260" height="355" rx="32" fill="#18181b" stroke="#52525b"/>
+    <rect x="945" y="302" width="170" height="50" rx="25" fill="#27272a"/><text x="1030" y="334" text-anchor="middle" fill="#fafafa" font-family="Inter,Segoe UI,sans-serif" font-size="18" font-weight="600">Express API</text>
+    <text x="1030" y="405" text-anchor="middle" fill="#fafafa" font-family="Inter,Segoe UI,sans-serif" font-size="27" font-weight="700">Agent Router</text>
+    <text x="1030" y="448" text-anchor="middle" fill="#a1a1aa" font-family="Inter,Segoe UI,sans-serif" font-size="17">Validates images</text>
+    <text x="1030" y="476" text-anchor="middle" fill="#a1a1aa" font-family="Inter,Segoe UI,sans-serif" font-size="17">Chooses capabilities</text>
+    <text x="1030" y="504" text-anchor="middle" fill="#a1a1aa" font-family="Inter,Segoe UI,sans-serif" font-size="17">Starts + polls tasks</text>
+    <text x="1030" y="532" text-anchor="middle" fill="#a1a1aa" font-family="Inter,Segoe UI,sans-serif" font-size="17">Protects API keys</text>
+  </g>
+
+  <g filter="url(#shadow)"><rect x="1265" y="270" width="250" height="120" rx="24" fill="#172554" stroke="#3b82f6"/><text x="1390" y="322" text-anchor="middle" fill="#93c5fd" font-family="Inter,Segoe UI,sans-serif" font-size="18">UNDERSTAND</text><text x="1390" y="354" text-anchor="middle" fill="#fff" font-family="Inter,Segoe UI,sans-serif" font-size="24" font-weight="700">Gemini Vision</text></g>
+  <g filter="url(#shadow)"><rect x="1265" y="414" width="250" height="120" rx="24" fill="#14342b" stroke="#10b981"/><text x="1390" y="466" text-anchor="middle" fill="#6ee7b7" font-family="Inter,Segoe UI,sans-serif" font-size="18">TRY ON</text><text x="1390" y="498" text-anchor="middle" fill="#fff" font-family="Inter,Segoe UI,sans-serif" font-size="24" font-weight="700">YouCam APIs</text></g>
+  <g filter="url(#shadow)"><rect x="1265" y="558" width="250" height="120" rx="24" fill="#422006" stroke="#f59e0b"/><text x="1390" y="610" text-anchor="middle" fill="#fcd34d" font-family="Inter,Segoe UI,sans-serif" font-size="18">DISCOVER</text><text x="1390" y="642" text-anchor="middle" fill="#fff" font-family="Inter,Segoe UI,sans-serif" font-size="24" font-weight="700">Shopping Search</text></g>
+
+  <g><rect x="475" y="725" width="555" height="92" rx="24" fill="#18181b" stroke="#3f3f46"/><text x="510" y="765" fill="#a78bfa" font-family="Inter,Segoe UI,sans-serif" font-size="17" font-weight="700">SESSION MEMORY</text><text x="510" y="794" fill="#d4d4d8" font-family="Inter,Segoe UI,sans-serif" font-size="17">Canonical outfit · experiment previews · context · tried items · shopping list</text></g>
+</svg>

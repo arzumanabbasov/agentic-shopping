@@ -74,6 +74,12 @@ flowchart LR
 
 The frontend never receives provider credentials. It communicates only with the Naxora server, which validates uploads, routes AI tasks, polls results, and normalizes provider responses.
 
+### Architecture visuals
+
+| System architecture | Agent workflow | Visual state model |
+| --- | --- | --- |
+| [![Naxora system architecture](docs/diagrams/system-architecture.png)](docs/diagrams/system-architecture.png) | [![Naxora agent workflow](docs/diagrams/agent-workflow.png)](docs/diagrams/agent-workflow.png) | [![Naxora visual state model](docs/diagrams/visual-state-model.png)](docs/diagrams/visual-state-model.png) |
+
 ## Technology
 
 - React 19 and Vite 7
